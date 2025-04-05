@@ -16,11 +16,12 @@ export class AuthService {
     if (!user || user.role !== 'admin') {
       throw new UnauthorizedException('Admin user not found');
     }
-    // Compare the password (assuming you store hashed passwords)
+
     const valid = await bcrypt.compare(password, user.password);
     if (!valid) {
       throw new UnauthorizedException('Invalid credentials');
     }
+
     return user;
   }
 
@@ -28,10 +29,13 @@ export class AuthService {
     const user: User | null = await this.userRepository.findOne({
       where: { phone },
     });
+    return user && user.role === 'admin' ? user : null;
+  }
 
-    if (user && user.role === 'admin') {
-      return user;
-    }
-    return null;
+  async findCustomerByPhone(phone: string): Promise<User | null> {
+    const user: User | null = await this.userRepository.findOne({
+      where: { phone },
+    });
+    return user && user.role === 'customer' ? user : null;
   }
 }
