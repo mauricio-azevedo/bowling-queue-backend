@@ -1,21 +1,23 @@
 import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { User } from '../users/user.entity';
 
 @Injectable()
 export class AuthService {
-  constructor(/* inject your Redis client or service here */) {}
+  constructor(
+    @InjectRepository(User)
+    private userRepository: Repository<User>,
+  ) {}
 
-  // async sendVerificationCode(phone: string): Promise<void> {
-  //   const code = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit code
-  //   // Store the code with an expiry (e.g., 5 minutes)
-  //   // Pseudo-code: redis.set(`verify:${phone}`, code, 'EX', 300);
-  //   console.log(`Verification code for ${phone}: ${code}`);
-  //   // TODO: Integrate your WhatsApp API provider to send this code.
-  // }
+  async findAdminByPhone(phone: string): Promise<User | null> {
+    const user: User | null = await this.userRepository.findOne({
+      where: { phone },
+    });
 
-  // async verifyCode(phone: string, inputCode: string): Promise<boolean> {
-  //   // Retrieve stored code: let storedCode = await redis.get(`verify:${phone}`);
-  //   // For demonstration, assume a match if input equals a hard-coded value (replace with real logic)
-  //   const storedCode = '123456'; // Replace with actual Redis fetch
-  //   return storedCode === inputCode;
-  // }
+    if (user && user.role === 'admin') {
+      return user;
+    }
+    return null;
+  }
 }
