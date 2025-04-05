@@ -1,7 +1,7 @@
 import { Body, Controller, HttpException, HttpStatus, Post, Session } from '@nestjs/common';
-import { AuthService } from './auth.service';
-import { VerifyAdminLoginCodeDto } from './dto/verify-admin-login-code.dto';
-import { PrimaryAdminLoginDto } from './dto/primary-admin-login.dto';
+import { AuthService } from '../auth.service';
+import { VerifyAdminLoginCodeDto } from '../dto/verify-admin-login-code.dto';
+import { PrimaryAdminLoginDto } from '../dto/primary-admin-login.dto';
 
 @Controller('auth/admin')
 export class AdminAuthController {
@@ -22,7 +22,7 @@ export class AdminAuthController {
   }
 
   @Post('verify-login-code')
-  async verifyAdminLoginCode(@Body() body: VerifyAdminLoginCodeDto, @Session() session: Record<string, any>) {
+  async verifyLoginCode(@Body() body: VerifyAdminLoginCodeDto, @Session() session: Record<string, any>) {
     const { phone, code } = body;
     if (session.phone !== phone || session.verificationCode !== code) {
       throw new HttpException('Invalid verification code', HttpStatus.UNAUTHORIZED);
