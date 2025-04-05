@@ -3,30 +3,31 @@ import { AppModule } from './app.module';
 import session from 'express-session';
 import { RedisStore } from 'connect-redis';
 import { createClient } from 'redis';
+import { ConfigService } from '@nestjs/config';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-
-  // Create and configure the Redis client (redis v4)
-  const redisClient = createClient({ url: 'redis://localhost:6379' });
+  const configService = app.get(ConfigService);
+  const redisClient = createClient({
+    url: configService.get<string>('REDIS_URL'),
+  });
   redisClient.on('error', (err) => console.error('Redis Client Error', err));
   await redisClient.connect();
 
-  // Configure express-session middleware with connect-redis store (v8)
   app.use(
     session({
       store: new RedisStore({ client: redisClient }),
-      secret: process.env.SESSION_SECRET || 'your-secret-here',
+      secret: configService.get<string>('SESSION_SECRET', 'secret'),
       resave: false,
       saveUninitialized: false,
       cookie: {
-        secure: false, // set true in production with HTTPS
+        secure: false, // Set true in production when using HTTPS
         httpOnly: true,
         maxAge: 3600000, // 1 hour
       },
     }),
   );
 
-  await app.listen(process.env.PORT || 3000);
+  await app.listen(parseInt(configService.get<string>('PORT', '3000')));
 }
 bootstrap();
