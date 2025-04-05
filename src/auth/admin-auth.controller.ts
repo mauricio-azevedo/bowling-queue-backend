@@ -1,31 +1,28 @@
 import { Body, Controller, HttpException, HttpStatus, Post, Session } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { SendAdminLoginCodeDto } from './dto/send-admin-login-code.dto';
 import { VerifyAdminLoginCodeDto } from './dto/verify-admin-login-code.dto';
+import { PrimaryAdminLoginDto } from './dto/primary-admin-login.dto';
 
 @Controller('auth/admin')
 export class AdminAuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @Post('send-login-code')
-  async sendLoginCode(@Body() body: SendAdminLoginCodeDto, @Session() session: Record<string, any>) {
-    const { phone } = body;
-    const user = await this.authService.findAdminByPhone(phone);
-    if (!user) {
-      throw new HttpException('Admin user not found', HttpStatus.NOT_FOUND);
-    }
-    // Generate a 6-digit code
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-    // Store the code (and phone) in the session (backed by Redis)
-    session.verificationCode = code;
+  @Post('primary-login')
+  async primaryLogin(@Body() body: PrimaryAdminLoginDto, @Session() session: Record<string, any>) {
+    const { phone, password } = body;
+    await this.authService.validateAdminCredentials(phone, password);
+    // Generate a 6-digit verification code
+    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+    // Store code and phone in the session (backed by Redis)
+    session.verificationCode = verificationCode;
     session.phone = phone;
-    // Simulate sending SMS (in production, integrate with an SMS service)
-    console.log(`Sending SMS to ${phone}: Your verification code is ${code}`);
+    // Simulate sending SMS (replace with actual SMS integration in production)
+    console.log(`Sending SMS to ${phone}: Your verification code is ${verificationCode}`);
     return { message: 'Verification code sent' };
   }
 
   @Post('verify-login-code')
-  async verifyAdmin(@Body() body: VerifyAdminLoginCodeDto, @Session() session: Record<string, any>) {
+  async verifyAdminLoginCode(@Body() body: VerifyAdminLoginCodeDto, @Session() session: Record<string, any>) {
     const { phone, code } = body;
     if (session.phone !== phone || session.verificationCode !== code) {
       throw new HttpException('Invalid verification code', HttpStatus.UNAUTHORIZED);
